@@ -93,6 +93,33 @@ class Pagerduty
     result >= 0 ? (return result) : (return 0)
   end
 
+  def on_weekend?(st)
+    [0, 6, 7].include?(st.wday)
+  end
+
+  def during_office_hours?(st)
+    st.utc
+    workday_start_hour = 14
+    workday_end_hour = 22
+    if ! on_weekend?(st)
+      Range.new(
+        Time.utc(st.year, st.month, st.day, workday_start_hour),
+        Time.utc(st.year, st.month, st.day, workday_end_hour)
+      ).cover?(st)
+    else
+      return false
+    end
+  end
+
+  def which_shift(incident_created_at)
+    st = Time.parse(incident_created_at).utc
+    if during_office_hours?(st)
+      return 'working'
+    else
+      return 'non_working'
+    end
+  end
+
   def process_json(json)
     patterns = [
       /^\S+\sService:([^\s]+)?/i,
@@ -103,7 +130,8 @@ class Pagerduty
     json['tags'] = ['pagerduty']
     json['custom'] = {}
     json['custom']['seconds_since_incident_creation'] = calculate_seconds_passed?(json)
-
+    json['custom']['oncall_shift'] = which_shift(json['incident']['created_at'])
+    puts json['custom']['oncall_shift']
     # Data comes out of scan like so [[nil, "ServiceName"]], index 0 for first pattern and 1 for second pattern
     matched = json['incident']['description'].scan(re).first
     if matched.is_a?(Array)
