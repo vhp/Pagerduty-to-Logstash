@@ -131,7 +131,6 @@ class Pagerduty
     json['custom'] = {}
     json['custom']['seconds_since_incident_creation'] = calculate_seconds_passed?(json)
     json['custom']['oncall_shift'] = which_shift(json['incident']['created_at'])
-    puts json['custom']['oncall_shift']
     # Data comes out of scan like so [[nil, "ServiceName"]], index 0 for first pattern and 1 for second pattern
     matched = json['incident']['description'].scan(re).first
     if matched.is_a?(Array)
